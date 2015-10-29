@@ -18,46 +18,57 @@ namespace LearningAboutWinAPI
         {
             InitializeComponent();
         }
-        /* http://stackoverflow.com/questions/523405/how-to-send-text-to-notepad-in-c-win32 
-         * and
-         * http://stackoverflow.com/questions/6604070/write-text-to-notepad-with-c-win32 */
+        /* http://blogs.msdn.com/b/thottams/archive/2006/08/11/696013.aspx */
 
-        [DllImport("User32.dll", CharSet = CharSet.Auto)]
-        extern static IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, [In] string lpClassName, [In] string lpWindowName);
-
-        [DllImport("User32.dll", EntryPoint = "SendMessage")]
-        extern static int SendMessageGetTextLength(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("User32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int uMsg, int wParam, string lParam);
-
-        [DllImport("User32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int uMsg, int wParam, int lParam);
-
-        const int WM_GETTEXTLENGTH = 0x000E;
-
-        const int EM_SETSEL = 0x00B1;
-
-        const int EM_REPLACESEL = 0x00C2;
-
-        public void testAppendText(string text)
+        public struct PROCESS_INFORMATION
         {
-            Process[] notepads = Process.GetProcessesByName("notepad");
-            if (notepads.Length == 0) return;
-            if (notepads[0] != null)
-            {
-                IntPtr editBox = FindWindowEx(notepads[0].MainWindowHandle, new IntPtr(0), "Edit", null);
-                int length = SendMessageGetTextLength(editBox, WM_GETTEXTLENGTH, IntPtr.Zero, IntPtr.Zero);
-                SendMessage(editBox, EM_SETSEL, length, length);
-                SendMessage(editBox, EM_REPLACESEL, 1, text);
-            }
-
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public uint dwProcessId;
+            public uint dwThreadId;
         }
+
+        public struct STARTUPINFO
+        {
+            public uint cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public uint dwX;
+            public uint dwY;
+            public uint dwXSize;
+            public uint dwYSize;
+            public uint dwXCountChars;
+            public uint dwYCountChars;
+            public uint dwFillAttribute;
+            public uint dwFlags;
+            public short wShowWindow;
+            public short cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        public struct SECURITY_ATTRIBUTES
+        {
+            public int length;
+            public IntPtr lpSecurityDescriptor;
+            public bool bInheritHandle;
+        }
+
+        [DllImport("kernel32.dll")]
+        static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes,
+                        bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment,
+                        string lpCurrentDirectory, ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                testAppendText(textBox1.Text);
+                STARTUPINFO si = new STARTUPINFO();
+                PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
+                CreateProcess("C:\\WINDOWS\\SYSTEM32\\Calc.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
             }
             catch (Exception er)
             {
