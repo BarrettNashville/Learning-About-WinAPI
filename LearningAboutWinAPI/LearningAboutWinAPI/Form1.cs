@@ -20,13 +20,6 @@ namespace LearningAboutWinAPI
         }
         /* http://blogs.msdn.com/b/thottams/archive/2006/08/11/696013.aspx */
 
-        public struct PROCESS_INFORMATION
-        {
-            public IntPtr hProcess;
-            public IntPtr hThread;
-            public uint dwProcessId;
-            public uint dwThreadId;
-        }
 
         public struct STARTUPINFO
         {
@@ -50,6 +43,14 @@ namespace LearningAboutWinAPI
             public IntPtr hStdError;
         }
 
+        public struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public uint dwProcessId;
+            public uint dwThreadId;
+        }
+
         public struct SECURITY_ATTRIBUTES
         {
             public int length;
@@ -62,13 +63,37 @@ namespace LearningAboutWinAPI
                         bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment,
                         string lpCurrentDirectory, ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
 
+        /* http://stackoverflow.com/questions/14962081/click-on-ok-button-of-message-box-using-winapi-in-c-sharp */
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern int SendMessage(IntPtr hWnd, int msg, int wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string windowTitle);
+
+        // For Windows Mobile, replace user32.dll with coredll.dll
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
+                /* Constants:
+                 * http://www.pinvoke.net/default.aspx/Constants.WM
+                 */
+                const int WM_CLOSE = 0x10;
+
                 STARTUPINFO si = new STARTUPINFO();
                 PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
                 CreateProcess("C:\\WINDOWS\\SYSTEM32\\Calc.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, null, ref si, out pi);
+
+
+                IntPtr hwnd = FindWindow(null, "Calculator");
+                //if (hwnd != 0)
+                SendMessage(hwnd, WM_CLOSE, 0, IntPtr.Zero);
+
+                // MessageBox.Show();
             }
             catch (Exception er)
             {
