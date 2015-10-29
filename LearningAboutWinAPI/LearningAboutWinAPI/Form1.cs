@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -17,37 +18,26 @@ namespace LearningAboutWinAPI
         {
             InitializeComponent();
         }
+        /* http://stackoverflow.com/questions/523405/how-to-send-text-to-notepad-in-c-win32 
+         * and
+         * http://stackoverflow.com/questions/6604070/write-text-to-notepad-with-c-win32 */
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SYSTEM_INFO
-        {
-            public uint dwOemId;
-            public uint dwPageSize;
-            public uint lpMinimumApplicationAddress;
-            public uint lpMaximumApplicationAddress;
-            public uint dwActiveProcessorMask;
-            public uint dwNumberOfProcessors;
-            public uint dwProcessorType;
-            public uint dwAllocationGranularity;
-            public uint dwProcessorLevel;
-            public uint dwProcessorRevision;
-        }
-
-        [DllImport("kernel32", SetLastError = true)]
-        public static extern void GetSystemInfo(ref SYSTEM_INFO lpSystemInfo);
-
-
+        [DllImport("user32.dll", EntryPoint = "FindWindowEx")]
+        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+        [DllImport("User32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, int uMsg, int wParam, string lParam);
 
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                SYSTEM_INFO pSI = new SYSTEM_INFO();
-                GetSystemInfo(ref pSI);
-
-                listBox1.Items.Insert(0, "Number of Processors: " + pSI.dwNumberOfProcessors.ToString());
-                listBox1.Items.Insert(1, "Processor Type: " + pSI.dwProcessorType.ToString());
-                listBox1.Items.Insert(2, "Page Size: " + pSI.dwPageSize);
+                Process[] notepads = Process.GetProcessesByName("notepad");
+                if (notepads.Length == 0) return;
+                if (notepads[0] != null)
+                {
+                    IntPtr child = FindWindowEx(notepads[0].MainWindowHandle, new IntPtr(0), "Edit", null);
+                    SendMessage(child, 0x000C, 0, textBox1.Text);
+                }
             }
             catch (Exception er)
             {
