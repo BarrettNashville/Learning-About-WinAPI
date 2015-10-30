@@ -1,0 +1,209 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Automation;
+using WinAPI;
+
+namespace LearningAboutWinAPI
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        /* http://blogs.msdn.com/b/thottams/archive/2006/08/11/696013.aspx */
+        public struct STARTUPINFO
+        {
+            public uint cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public uint dwX;
+            public uint dwY;
+            public uint dwXSize;
+            public uint dwYSize;
+            public uint dwXCountChars;
+            public uint dwYCountChars;
+            public uint dwFillAttribute;
+            public uint dwFlags;
+            public short wShowWindow;
+            public short cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        public struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public uint dwProcessId;
+            public uint dwThreadId;
+        }
+
+        public struct SECURITY_ATTRIBUTES
+        {
+            public int length;
+            public IntPtr lpSecurityDescriptor;
+            public bool bInheritHandle;
+        }
+
+        [DllImport("kernel32.dll")]
+        static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes,
+                        bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment,
+                        string lpCurrentDirectory, ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder strText, int maxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, int msg, int Param, System.Text.StringBuilder text);
+
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+        // Delegate to filter which windows to include 
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        /// <summary> Get the text for the window pointed to by hWnd </summary>
+        public static string GetWindowText(IntPtr hWnd)
+        {
+            int size = GetWindowTextLength(hWnd);
+            if (size > 0)
+            {
+                var builder = new StringBuilder(size + 1);
+                GetWindowText(hWnd, builder, builder.Capacity);
+                return builder.ToString();
+            }
+
+            return String.Empty;
+        }
+
+        /// <summary> Find all windows that match the given filter </summary>
+        /// <param name="filter"> A delegate that returns true for windows
+        ///    that should be returned and false for windows that should
+        ///    not be returned </param>
+        public static IEnumerable<IntPtr> FindWindows(EnumWindowsProc filter)
+        {
+          IntPtr found = IntPtr.Zero;
+          List<IntPtr> windows = new List<IntPtr>();
+
+          EnumWindows(delegate(IntPtr wnd, IntPtr param)
+          {
+              if (filter(wnd, param))
+              {
+                  // only add the windows that pass the filter
+                  windows.Add(wnd);
+              }
+
+              // but return true here so that we iterate all windows
+              return true;
+          }, IntPtr.Zero);
+
+          return windows;
+        }
+
+        /// <summary> Find all windows that contain the given title text </summary>
+        /// <param name="titleText"> The text that the window title must contain. </param>
+        public static IEnumerable<IntPtr> FindWindowsWithText(string titleText)
+        {
+            return FindWindows(delegate(IntPtr wnd, IntPtr param)
+            {
+                return GetWindowText(wnd).Contains(titleText);
+            });
+        } 
+
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                STARTUPINFO si = new STARTUPINFO();
+                PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
+                CreateProcess(@"MathApp.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero,
+                    null, ref si, out pi);
+
+
+                // Find a window
+                var win = WindowSearch.GetWindowByText("calc", "", false, true);
+                var windows = FindWindowsWithText("Math");
+                //var win = WindowSearch.GetWindowByText("notepad++", "", false, true);
+
+                var wins = windows.ToList();
+
+                IntPtr result = 0x0;
+                foreach (var item in wins)
+                {
+                    result = item;
+                }
+                // Set it foreground
+                WindowManipulation.SetForegroundWindow(win);
+
+                Thread.Sleep(500);
+
+                /* Key Constants:
+                 * https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+                 */
+
+                const int aKey = 0x41;
+                const int cKey = 0x43;
+                const int WM_GETTEXT = 0x000D;
+
+                /* Stack Overflow question with answer about EnumWindows() and GetWindowThreadProcessId()
+                 * http://stackoverflow.com/questions/21462733/how-to-get-hwnd-of-new-process-created-by-createprocess
+                 */
+
+                /* Stack overflow question with complete example of EnumWindows()
+                 * http://stackoverflow.com/questions/19867402/how-can-i-use-enumwindows-to-find-windows-with-a-specific-caption-title
+                 */
+
+
+
+
+                MouseKeyboard.PressKey(KeyConstants.VK_NUMPAD3);
+                MouseKeyboard.PressKey(KeyConstants.VK_TAB);
+                MouseKeyboard.PressKey(KeyConstants.VK_NUMPAD1);
+                MouseKeyboard.PressKey(KeyConstants.VK_TAB);
+                MouseKeyboard.PressKey(KeyConstants.VK_DOWN);
+                //MouseKeyboard.PressKey(KeyConstants.VK_RETURN);
+
+                System.Text.StringBuilder text = new System.Text.StringBuilder(255);  // or length from call with GETTEXTLENGTH
+                int RetVal = SendMessage(result, WM_GETTEXT, text.Capacity, text);
+
+                MessageBox.Show(RetVal.ToString());
+
+                Thread.Sleep(500);
+
+                MouseKeyboard.PressKey(cKey, false, false, true);
+
+                //listBox1.Items.Insert(0, RetVal.ToString());
+                //listBox1.Items.Insert(0, Clipboard.GetText());
+
+                Clipboard.Clear();
+
+
+            }
+            catch (Exception er)
+            {
+                MessageBox.Show(er.Message);
+            }
+        }
+
+    }
+}
