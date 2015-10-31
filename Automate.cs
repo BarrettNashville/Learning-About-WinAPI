@@ -1,21 +1,15 @@
-﻿using System;
+using System;
 using System.Text;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-
-namespace LearningAboutWinAPI
+namespace App
 {
-    public partial class Form1 : Form
+    public class Automate 
     {
-        public Form1()
-        {
-            InitializeComponent();
-        }
-
-        /* http://blogs.msdn.com/b/thottams/archive/2006/08/11/696013.aspx */
-
+        /*****************/
+        /**** STRUCTS ****/
+        /*****************/
         // Structs for CreateProcess()
         public struct STARTUPINFO
         {
@@ -51,6 +45,63 @@ namespace LearningAboutWinAPI
             public IntPtr lpSecurityDescriptor;
             public bool bInheritHandle;
         }
+ 
+        /*****************/
+        /***** ENUMS *****/
+        /*****************/
+
+        // enum for GetWindow()
+        enum GetWindow_Cmd : uint
+        {
+            GW_HWNDFIRST = 0,
+            GW_HWNDLAST = 1,
+            GW_HWNDNEXT = 2,
+            GW_HWNDPREV = 3,
+            GW_OWNER = 4,
+            GW_CHILD = 5,
+            GW_ENABLEDPOPUP = 6
+        }
+
+        // RedrawWindow() flags
+        public enum RedrawWindowFlags
+        {
+            RDW_INVALIDATE = 0x0001,
+            RDW_INTERNALPAINT = 0x0002,
+            RDW_ERASE = 0x0004,
+
+            RDW_VALIDATE = 0x0008,
+            RDW_NOINTERNALPAINT = 0x0010,
+            RDW_NOERASE = 0x0020,
+
+            RDW_NOCHILDREN = 0x0040,
+            RDW_ALLCHILDREN = 0x0080,
+
+            RDW_UPDATENOW = 0x0100,
+            RDW_ERASENOW = 0x0200,
+
+            RDW_FRAME = 0x0400,
+            RDW_NOFRAME = 0x0800
+        };
+
+        /*****************/
+        /*** CONSTANTS ***/
+        /*****************/
+
+        // Set value of NULL
+        public static IntPtr NULL = (IntPtr)0;
+
+        // Set constants
+        const int WM_SETTEXT = 0x000C;
+        const int WM_GETTEXT = 0x000D;
+        const UInt32 CB_SETCURSEL = 0x14E;
+        const int BM_CLICK = 0x00F5;
+        const int WM_SYSCOMMAND = 0X0112;
+        const int SC_CLOSE = 0XF060;
+
+
+        /******************/
+        /*** SIGNATURES ***/
+        /******************/
 
         // CreateProcess()
         [DllImport("kernel32.dll")]
@@ -82,94 +133,21 @@ namespace LearningAboutWinAPI
         [DllImport("user32.dll", SetLastError = true)]
         static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 
-        // enum for GetWindow()
-        enum GetWindow_Cmd : uint
-        {
-            GW_HWNDFIRST = 0,
-            GW_HWNDLAST = 1,
-            GW_HWNDNEXT = 2,
-            GW_HWNDPREV = 3,
-            GW_OWNER = 4,
-            GW_CHILD = 5,
-            GW_ENABLEDPOPUP = 6
-        }
-
-
         //RedrawWindow()
         /* https://msdn.microsoft.com/en-us/library/windows/desktop/dd162911(v=vs.85).aspx */
         [DllImport("user32.dll")]
         public static extern Boolean RedrawWindow(IntPtr hWnd, IntPtr lpRectUpdate, IntPtr hrgnUpdate, UInt32 flags);
 
-        // WinAPI RECT struct
-        public struct Rect
+
+
+        /*********************/
+        /*** PROGRAM START ***/
+        /*********************/
+
+        
+        public static void Main(String[] args) 
         {
-            public Int32 left;
-            public Int32 top;
-            public Int32 right;
-            public Int32 bottom;
-        };
-
-        // RedrawWindow() flags
-        public enum RedrawWindowFlags
-        {
-            RDW_INVALIDATE = 0x0001,
-            RDW_INTERNALPAINT = 0x0002,
-            RDW_ERASE = 0x0004,
-
-            RDW_VALIDATE = 0x0008,
-            RDW_NOINTERNALPAINT = 0x0010,
-            RDW_NOERASE = 0x0020,
-
-            RDW_NOCHILDREN = 0x0040,
-            RDW_ALLCHILDREN = 0x0080,
-
-            RDW_UPDATENOW = 0x0100,
-            RDW_ERASENOW = 0x0200,
-
-            RDW_FRAME = 0x0400,
-            RDW_NOFRAME = 0x0800
-        };
-
-        public static IntPtr NULL = (IntPtr)0;
-
-        // GetComboBoxInfo()
-        /* http://www.cyotek.com/blog/getting-the-hwnd-of-the-edit-component-within-a-combobox-control */
-        [DllImport("user32.dll")]
-        public static extern bool GetComboBoxInfo(IntPtr hWnd, ref COMBOBOXINFO pcbi);
-
-        // Structs for GetComboBoxInfo()
-        [StructLayout(LayoutKind.Sequential)]
-        public struct COMBOBOXINFO
-        {
-            public int cbSize;
-            public RECT rcItem;
-            public RECT rcButton;
-            public int stateButton;
-            public IntPtr hwndCombo;
-            public IntPtr hwndEdit;
-            public IntPtr hwndList;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RECT
-        {
-            public int left;
-            public int top;
-            public int right;
-            public int bottom;
-        }
-
-
-        const int WM_SETTEXT = 0x000C;
-        const int WM_GETTEXT = 0x000D;
-        const UInt32 CB_SETCURSEL = 0x14E;
-        const int BM_CLICK = 0x00F5;
-        const int WM_SYSCOMMAND = 0X0112;
-        const int SC_CLOSE = 0XF060;
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            try
+             try
             {
                 // STEP 1 - Open app and get hwnd of app
                 STARTUPINFO si = new STARTUPINFO();
@@ -203,9 +181,11 @@ namespace LearningAboutWinAPI
                 SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
 
                 // STEP 5 - Capture the error message
-                StringBuilder getText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
+                StringBuilder getText = new StringBuilder(256);  
                 SendMessage(lbl, WM_GETTEXT, getText.Capacity, getText);
-                MessageBox.Show(getText.ToString());
+                Console.WriteLine("When attempting to divide by zero, we get the following error message:");
+                Console.WriteLine(getText.ToString());
+                Console.WriteLine("----");
 
                 // STEP 6 - Enter 3 in the second text box
                 setNum2.Clear();
@@ -214,7 +194,8 @@ namespace LearningAboutWinAPI
 
                 // STEP 7 - Click the equals button (and redraw window)
                 SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
-                RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_ALLCHILDREN));
+                RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW |
+RedrawWindowFlags.RDW_ALLCHILDREN));
 
                 // STEP 8 - Store the answer to memory
                 StringBuilder getNewText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
@@ -224,14 +205,18 @@ namespace LearningAboutWinAPI
                 SendMessage(win, WM_SYSCOMMAND, SC_CLOSE, 0);
 
                 // STEP 10 - Write the result to the console
-                MessageBox.Show(getNewText.ToString());
+                Console.WriteLine("The answer to 6 divided by 3 is " + getNewText.ToString());
+        
+                // Keep console open
+                Console.ReadLine();
 
             }
             catch (Exception er)
             {
-                MessageBox.Show(er.Message);
+                Console.WriteLine("The following error was encountered in the program:");
+                Console.WriteLine(er.Message);
             }
         }
-
+        
     }
 }
