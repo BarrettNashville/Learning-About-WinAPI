@@ -1,17 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Windows.Automation;
-using WinAPI;
+
 
 namespace LearningAboutWinAPI
 {
@@ -103,14 +95,6 @@ namespace LearningAboutWinAPI
         }
 
 
-        // GetWindowText()
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder strText, int maxCount);
-
-        // GetWindowTextLength()
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern int GetWindowTextLength(IntPtr hWnd);
-
         //RedrawWindow()
         /* https://msdn.microsoft.com/en-us/library/windows/desktop/dd162911(v=vs.85).aspx */
         [DllImport("user32.dll")]
@@ -175,130 +159,72 @@ namespace LearningAboutWinAPI
             public int bottom;
         }
 
-        [DllImport("user32.dll")]
-        static extern IntPtr GetDlgItem(IntPtr hDlg, int nIDDlgItem);
 
+        const int WM_SETTEXT = 0x000C;
+        const int WM_GETTEXT = 0x000D;
+        const UInt32 CB_SETCURSEL = 0x14E;
+        const int BM_CLICK = 0x00F5;
+        const int WM_SYSCOMMAND = 0X0112;
+        const int SC_CLOSE = 0XF060;
 
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                /* ATTEMPT TO OPEN APP */
+                // STEP 1 - Open app and get hwnd of app
                 STARTUPINFO si = new STARTUPINFO();
                 PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
                 CreateProcess(@"MathApp.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero,
                     null, ref si, out pi);
-                /* SUCCESSFULLY OPENED APP */
-                
-                //evidently, you've got to sleep for a litle bit before the FindWindow() method will find the new window
                 Thread.Sleep(100);
-                /* ATTEMP TO RETRIEVE HWND OF APP */
                 var win = FindWindow(null, "Math App");
-                //MessageBox.Show(win.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF APP */
 
-                /* ATTEMPT TO RETRIEVE HWND OF ANSWER LABEL */
-                var lbl = FindWindowEx(win, IntPtr.Zero, null, "Answer");
-                //MessageBox.Show(lbl.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF ANSWER LABEL */
-
-                /* ATTEMPT TO RETRIEVE TEXT OF ANSWER LABEL */
-                const int WM_GETTEXT = 0x000D;
-                StringBuilder getText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
-                SendMessage(lbl, WM_GETTEXT, getText.Capacity, getText);
-                //MessageBox.Show(getText.ToString());
-                /* SUCCESSFULLY RETRIEVED TEXT OF ANSWER LABEL */
-
-                /* ATTEMPT TO SET NEW TEXT OF ANSWER LABEL */
-                const int WM_SETTEXT = 0x000C;
-                StringBuilder setText = new StringBuilder(256);
-                setText.Append("New Answer");
-                SendMessage(lbl, WM_SETTEXT, setText.MaxCapacity, setText);
-
-                StringBuilder getNewText = new StringBuilder(256);
-                SendMessage(lbl, WM_GETTEXT, getNewText.Capacity, getNewText);
-                //MessageBox.Show(getNewText.ToString());
-                /* SUCCESSFULLY SET AND RETRIEVED NEW TEXT OF ANSWER LABEL */
-
-                /* ATTEMPT TO REDRAW WINDOW */
-                RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_ALLCHILDREN));
-                /* SUCCESSFULLY REDREW WINDOW */
-
-                /* ATTEMPT TO RETRIEVE HWND OF FIRST TEXTBOX */
+                // STEP 2 - Enter 6 in the first text box and 0 in the second
                 var num1 = FindWindowEx(win, IntPtr.Zero, null, "Enter First Number");
-                //MessageBox.Show(num1.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF FIRST TEXTBOX */
-
-                /* ATTEMPT TO RETRIEVE HWND OF SECOND TEXTBOX */
-                var num2 = FindWindowEx(win, IntPtr.Zero, null, "Enter Second Number");
-                //MessageBox.Show(num2.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF SECOND TEXTBOX */
-
-                /* ATTEMPT TO RETRIEVE HWND OF CALCULATE BUTTON*/
-                var btn = FindWindowEx(win, IntPtr.Zero, null, "Calculate");
-                //MessageBox.Show(btn.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF CALCULATE BUTTON */
-
-                /* ATTEMPT TO SET FIRST NUMBER to 6 */
                 StringBuilder setNum1 = new StringBuilder(256);
                 setNum1.Append("6");
                 SendMessage(num1, WM_SETTEXT, setNum1.MaxCapacity, setNum1);
-                /* SUCCESSFULLY SET FIRST NUMBER TO 6 */
 
-                /* ATTEMPT TO SET SECOND NUMBER to 0 */
+                var num2 = FindWindowEx(win, IntPtr.Zero, null, "Enter Second Number");
                 StringBuilder setNum2 = new StringBuilder(256);
                 setNum2.Append("0");
                 SendMessage(num2, WM_SETTEXT, setNum2.MaxCapacity, setNum2);
-                /* SUCCESSFULLY SET SECOND NUMBER TO 0 */
 
-                /* ATTEMPT TO CLICK CALCULATE BUTTON */
-                /* Two options: */
-
-                /* Option 1 */
-                /* http://stackoverflow.com/questions/14962081/click-on-ok-button-of-message-box-using-winapi-in-c-sharp */
-                //const int WM_LBUTTONDOWN = 0x0201;
-                //const int WM_LBUTTONUP = 0x0202;
-                //SendMessage(btn, WM_LBUTTONDOWN, 0, IntPtr.Zero);
-                //SendMessage(btn, WM_LBUTTONUP, 0, IntPtr.Zero);
-
-                /* Option 2 */
-                /* http://stackoverflow.com/questions/8598596/defeating-a-program-is-trying-to-access-email-with-sendmessage */
-                const int BM_CLICK = 0x00F5;
-                SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
-                /* SUCCESSFULLY CLICKED CACLULATE BUTTON */
-
-                /* ATTEMPT TO REDRAW WINDOW */
-                RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_ALLCHILDREN));
-                /* SUCCESSFULLY REDREW WINDOW */
-
-
-
-
-
-
-
-                /* ATTEMPT TO RETRIEVE HWND OF COMBO BOX */
+                // STEP 3 - Select Divide in the Combo Box
                 /* http://stackoverflow.com/questions/7376435/how-to-interact-with-a-form-using-handle-c-sharp */
-                var ch = GetWindow(win, (uint) GetWindow_Cmd.GW_CHILD);
+                var ch = GetWindow(win, (uint)GetWindow_Cmd.GW_CHILD);
                 var ch2 = GetWindow(ch, (uint)GetWindow_Cmd.GW_HWNDNEXT);
                 var ch3 = GetWindow(ch2, (uint)GetWindow_Cmd.GW_HWNDNEXT);
-                MessageBox.Show(ch3.ToString("X8"));
-                /* SUCCESSFULLY RETRIEVED HWND OF COMBO BOX */
+                SendMessage(ch3, CB_SETCURSEL, (Int32)3, 0);
 
+                // STEP 4 - Click the Equals Button (but grab the hwnd of answer label first)
+                var lbl = FindWindowEx(win, IntPtr.Zero, null, "Answer");
+                var btn = FindWindowEx(win, IntPtr.Zero, null, "Calculate");
+                SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
 
-                
+                // STEP 5 - Capture the error message
+                StringBuilder getText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
+                SendMessage(lbl, WM_GETTEXT, getText.Capacity, getText);
+                MessageBox.Show(getText.ToString());
 
-                /* ATTEMPT TO SELECT AN ITEM IN THE COMBO BOX */
-                //This will work to select index of the CB once handle is found
-                const UInt32 CB_SETCURSEL = 0x14E;
-                SendMessage(ch3, CB_SETCURSEL, (Int32)2, 0);
-                /* SUCCESSFULLY SELECTED AN ITEM IN THE COMBO BOX */
+                // STEP 6 - Enter 3 in the second text box
+                setNum2.Clear();
+                setNum2.Append("3");
+                SendMessage(num2, WM_SETTEXT, setNum2.MaxCapacity, setNum2);
 
-                /* ATTEMPT TO CLOSE WINDOW */
-                const int WM_SYSCOMMAND = 0X0112;
-                const int SC_CLOSE = 0XF060;
-                //SendMessage(win, WM_SYSCOMMAND, SC_CLOSE, 0);
-                /* SUCCESSFULLY CLOSED WINDOW */
+                // STEP 7 - Click the equals button (and redraw window)
+                SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
+                RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_ALLCHILDREN));
+
+                // STEP 8 - Store the answer to memory
+                StringBuilder getNewText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
+                SendMessage(lbl, WM_GETTEXT, getNewText.Capacity, getNewText);
+
+                // STEP 9 - Close the window
+                SendMessage(win, WM_SYSCOMMAND, SC_CLOSE, 0);
+
+                // STEP 10 - Write the result to the console
+                MessageBox.Show(getNewText.ToString());
 
             }
             catch (Exception er)
