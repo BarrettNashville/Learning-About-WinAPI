@@ -82,6 +82,27 @@ namespace LearningAboutWinAPI
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern int SendMessage(IntPtr hWnd, uint msg, int wParam, IntPtr lParam);
 
+        // SendMessage() for CB_SETCURSEL
+        [DllImport("user32.dll")]
+        static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, Int32 wParam, Int32 lParam);
+
+        // GetWindow()
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        // enum for GetWindow()
+        enum GetWindow_Cmd : uint
+        {
+            GW_HWNDFIRST = 0,
+            GW_HWNDLAST = 1,
+            GW_HWNDNEXT = 2,
+            GW_HWNDPREV = 3,
+            GW_OWNER = 4,
+            GW_CHILD = 5,
+            GW_ENABLEDPOPUP = 6
+        }
+
+
         // GetWindowText()
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder strText, int maxCount);
@@ -154,6 +175,9 @@ namespace LearningAboutWinAPI
             public int bottom;
         }
 
+        [DllImport("user32.dll")]
+        static extern IntPtr GetDlgItem(IntPtr hDlg, int nIDDlgItem);
+
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -215,8 +239,6 @@ namespace LearningAboutWinAPI
                 //MessageBox.Show(btn.ToString("X8"));
                 /* SUCCESSFULLY RETRIEVED HWND OF CALCULATE BUTTON */
 
-
-
                 /* ATTEMPT TO SET FIRST NUMBER to 6 */
                 StringBuilder setNum1 = new StringBuilder(256);
                 setNum1.Append("6");
@@ -230,28 +252,53 @@ namespace LearningAboutWinAPI
                 /* SUCCESSFULLY SET SECOND NUMBER TO 0 */
 
                 /* ATTEMPT TO CLICK CALCULATE BUTTON */
+                /* Two options: */
+
+                /* Option 1 */
                 /* http://stackoverflow.com/questions/14962081/click-on-ok-button-of-message-box-using-winapi-in-c-sharp */
-                const int WM_LBUTTONDOWN = 0x0201;
-                const int WM_LBUTTONUP = 0x0202;
-                SendMessage(btn, WM_LBUTTONDOWN, 0, IntPtr.Zero);
-                SendMessage(btn, WM_LBUTTONUP, 0, IntPtr.Zero);
+                //const int WM_LBUTTONDOWN = 0x0201;
+                //const int WM_LBUTTONUP = 0x0202;
+                //SendMessage(btn, WM_LBUTTONDOWN, 0, IntPtr.Zero);
+                //SendMessage(btn, WM_LBUTTONUP, 0, IntPtr.Zero);
+
+                /* Option 2 */
+                /* http://stackoverflow.com/questions/8598596/defeating-a-program-is-trying-to-access-email-with-sendmessage */
+                const int BM_CLICK = 0x00F5;
+                SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
                 /* SUCCESSFULLY CLICKED CACLULATE BUTTON */
 
                 /* ATTEMPT TO REDRAW WINDOW */
                 RedrawWindow(win, NULL, NULL, (UInt32)(RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_INVALIDATE | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_ALLCHILDREN));
                 /* SUCCESSFULLY REDREW WINDOW */
 
-                /* ATTEMPT TO RETRIEVE HWND OF DROPDOWN BOX */
-                COMBOBOXINFO info;
-                info = new COMBOBOXINFO();
-                info.cbSize = Marshal.SizeOf(info);
-
-                //GetComboBoxInfo(win, ref info);
 
 
-                //var op = FindWindowEx(info.hwndList, IntPtr.Zero, null, null);
-                //MessageBox.Show(op.ToString("X8"));
 
+
+
+
+                /* ATTEMPT TO RETRIEVE HWND OF COMBO BOX */
+                /* http://stackoverflow.com/questions/7376435/how-to-interact-with-a-form-using-handle-c-sharp */
+                var ch = GetWindow(win, (uint) GetWindow_Cmd.GW_CHILD);
+                var ch2 = GetWindow(ch, (uint)GetWindow_Cmd.GW_HWNDNEXT);
+                var ch3 = GetWindow(ch2, (uint)GetWindow_Cmd.GW_HWNDNEXT);
+                MessageBox.Show(ch3.ToString("X8"));
+                /* SUCCESSFULLY RETRIEVED HWND OF COMBO BOX */
+
+
+                
+
+                /* ATTEMPT TO SELECT AN ITEM IN THE COMBO BOX */
+                //This will work to select index of the CB once handle is found
+                const UInt32 CB_SETCURSEL = 0x14E;
+                SendMessage(ch3, CB_SETCURSEL, (Int32)2, 0);
+                /* SUCCESSFULLY SELECTED AN ITEM IN THE COMBO BOX */
+
+                /* ATTEMPT TO CLOSE WINDOW */
+                const int WM_SYSCOMMAND = 0X0112;
+                const int SC_CLOSE = 0XF060;
+                //SendMessage(win, WM_SYSCOMMAND, SC_CLOSE, 0);
+                /* SUCCESSFULLY CLOSED WINDOW */
 
             }
             catch (Exception er)
