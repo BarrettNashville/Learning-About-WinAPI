@@ -147,12 +147,12 @@ namespace App
         
         public static void Main(String[] args) 
         {
-             try
+            try
             {
                 // STEP 1 - Open app and get hwnd of app
                 STARTUPINFO si = new STARTUPINFO();
                 PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
-                CreateProcess(@"MathApp.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero,
+                CreateProcess(@"MathApp\MathApp\bin\Debug\MathApp.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero,
                     null, ref si, out pi);
                 Thread.Sleep(100);
                 var win = FindWindow(null, "Math App");
@@ -172,12 +172,12 @@ namespace App
                 /* http://stackoverflow.com/questions/7376435/how-to-interact-with-a-form-using-handle-c-sharp */
                 var ch = GetWindow(win, (uint)GetWindow_Cmd.GW_CHILD);
                 var ch2 = GetWindow(ch, (uint)GetWindow_Cmd.GW_HWNDNEXT);
-                var ch3 = GetWindow(ch2, (uint)GetWindow_Cmd.GW_HWNDNEXT);
-                SendMessage(ch3, CB_SETCURSEL, (Int32)3, 0);
+                var cb= GetWindow(ch2, (uint)GetWindow_Cmd.GW_HWNDNEXT);
+                SendMessage(cb, CB_SETCURSEL, (Int32)2, 0);
 
                 // STEP 4 - Click the Equals Button (but grab the hwnd of answer label first)
                 var lbl = FindWindowEx(win, IntPtr.Zero, null, "Answer");
-                var btn = FindWindowEx(win, IntPtr.Zero, null, "Calculate");
+                var btn = FindWindowEx(win, IntPtr.Zero, null, "Equals");
                 SendMessage(btn, BM_CLICK, 0, IntPtr.Zero);
 
                 // STEP 5 - Capture the error message
@@ -198,7 +198,7 @@ namespace App
 RedrawWindowFlags.RDW_ALLCHILDREN));
 
                 // STEP 8 - Store the answer to memory
-                StringBuilder getNewText = new StringBuilder(256);  // or length from call with GETTEXTLENGTH
+                StringBuilder getNewText = new StringBuilder(256);  
                 SendMessage(lbl, WM_GETTEXT, getNewText.Capacity, getNewText);
 
                 // STEP 9 - Close the window
