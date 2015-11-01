@@ -154,7 +154,7 @@ namespace App
                 PROCESS_INFORMATION pi = new PROCESS_INFORMATION();
                 CreateProcess(@"MathApp\MathApp\bin\Debug\MathApp.exe", null, IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero,
                     null, ref si, out pi);
-                Thread.Sleep(100);
+                Thread.Sleep(400);
                 var win = FindWindow(null, "Math App");
 
                 // STEP 2 - Enter 6 in the first text box and 0 in the second
